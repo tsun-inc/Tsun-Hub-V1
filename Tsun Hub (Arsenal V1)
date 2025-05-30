@@ -1,0 +1,469 @@
+-- ZHYPERION Arsenal Styled GUI - Main Layout (Block 1)
+
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local TweenService = game:GetService("TweenService")
+
+-- Destroy any existing GUI
+if game.CoreGui:FindFirstChild("ZhyperionGUI") then
+    game.CoreGui.ZhyperionGUI:Destroy()
+end
+
+-- Screen GUI
+local ZGUI = Instance.new("ScreenGui", game.CoreGui)
+ZGUI.Name = "ZhyperionGUI"
+ZGUI.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+ZGUI.ResetOnSpawn = false
+
+-- UI Gradient Background
+local bg = Instance.new("Frame", ZGUI)
+bg.Size = UDim2.new(1, 0, 1, 0)
+bg.BackgroundColor3 = Color3.fromRGB(10, 10, 25)
+
+local gradient = Instance.new("UIGradient", bg)
+gradient.Color = ColorSequence.new{
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(20, 20, 60)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(10, 10, 30))
+}
+gradient.Rotation = 45
+
+-- Sidebar Panel
+local Sidebar = Instance.new("Frame", ZGUI)
+Sidebar.Name = "Sidebar"
+Sidebar.BackgroundColor3 = Color3.fromRGB(15, 15, 30)
+Sidebar.Size = UDim2.new(0, 150, 1, 0)
+Sidebar.Position = UDim2.new(0, 0, 0, 0)
+
+-- Section Button Function
+local function CreateSidebarButton(name, order)
+    local btn = Instance.new("TextButton", Sidebar)
+    btn.Name = name .. "Button"
+    btn.Size = UDim2.new(1, 0, 0, 40)
+    btn.Position = UDim2.new(0, 0, 0, (order - 1) * 42)
+    btn.BackgroundTransparency = 1
+    btn.Text = name
+    btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    btn.Font = Enum.Font.GothamBlack
+    btn.TextSize = 14
+
+    local outline = Instance.new("UIStroke", btn)
+    outline.Thickness = 2
+    outline.Color = Color3.fromRGB(255, 0, 0)
+
+    local anim = TweenService:Create(btn, TweenInfo.new(0.25), {
+        TextColor3 = Color3.fromRGB(255, 80, 80)
+    })
+
+    btn.MouseEnter:Connect(function() anim:Play() end)
+    btn.MouseLeave:Connect(function()
+        TweenService:Create(btn, TweenInfo.new(0.25), {
+            TextColor3 = Color3.fromRGB(255, 255, 255)
+        }):Play()
+    end)
+
+    return btn
+end
+
+-- Create Section Buttons
+local sections = {"Combat", "Anti Aim", "Player Visuals", "World Visuals", "Gun Mods", "Player Mods", "Miscellaneous", "Skins"}
+for i, sec in ipairs(sections) do
+    CreateSidebarButton(sec, i)
+end
+
+-- Main Panel Holder
+local PanelHolder = Instance.new("Frame", ZGUI)
+PanelHolder.Name = "PanelHolder"
+PanelHolder.Position = UDim2.new(0, 160, 0, 20)
+PanelHolder.Size = UDim2.new(1, -170, 1, -40)
+PanelHolder.BackgroundTransparency = 1
+
+-- Add UI PageLayout to switch sections
+local PageLayout = Instance.new("UIPageLayout", PanelHolder)
+PageLayout.FillDirection = Enum.FillDirection.Horizontal
+PageLayout.SortOrder = Enum.SortOrder.LayoutOrder
+PageLayout.TweenTime = 0.5
+PageLayout.EasingStyle = Enum.EasingStyle.Quad
+PageLayout.EasingDirection = Enum.EasingDirection.InOut
+
+-- Placeholder for each section (to be filled later)
+local function CreateSection(name)
+    local sec = Instance.new("Frame", PanelHolder)
+    sec.Name = name .. "Page"
+    sec.Size = UDim2.new(1, 0, 1, 0)
+    sec.BackgroundTransparency = 1
+    return sec
+end
+
+local Pages = {}
+for _, section in ipairs(sections) do
+    Pages[section] = CreateSection(section)
+end
+
+-- Section switching
+for i, sec in ipairs(sections) do
+    Sidebar:FindFirstChild(sec.."Button").MouseButton1Click:Connect(function()
+        PageLayout:JumpTo(Pages[sec])
+    end)
+end
+
+-- Combat Section UI and Logic (Block 2)
+
+local CombatPage = Pages["Combat"]
+
+-- UI Layout
+local UIGrid = Instance.new("UIGridLayout", CombatPage)
+UIGrid.CellSize = UDim2.new(0, 250, 0, 60)
+UIGrid.CellPadding = UDim2.new(0, 10, 0, 10)
+
+-- Utility functions
+local function createToggle(name, default, callback)
+	local frame = Instance.new("Frame")
+	frame.BackgroundTransparency = 1
+	frame.Size = UDim2.new(0, 250, 0, 60)
+
+	local text = Instance.new("TextLabel", frame)
+	text.Text = name
+	text.Font = Enum.Font.GothamBold
+	text.TextColor3 = Color3.fromRGB(255, 255, 255)
+	text.TextSize = 14
+	text.Size = UDim2.new(1, -60, 1, 0)
+	text.BackgroundTransparency = 1
+	text.TextXAlignment = Enum.TextXAlignment.Left
+
+	local toggle = Instance.new("TextButton", frame)
+	toggle.Size = UDim2.new(0, 40, 0, 40)
+	toggle.Position = UDim2.new(1, -50, 0.5, -20)
+	toggle.AnchorPoint = Vector2.new(0, 0)
+	toggle.Text = default and "On" or "Off"
+	toggle.BackgroundColor3 = default and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)
+	toggle.TextColor3 = Color3.fromRGB(0, 0, 0)
+	toggle.Font = Enum.Font.GothamBold
+	toggle.TextSize = 14
+	toggle.MouseButton1Click:Connect(function()
+		default = not default
+		toggle.Text = default and "On" or "Off"
+		toggle.BackgroundColor3 = default and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)
+		if callback then callback(default) end
+	end)
+
+	return frame
+end
+
+local function createSlider(name, min, max, default, callback)
+	local frame = Instance.new("Frame")
+	frame.BackgroundTransparency = 1
+	frame.Size = UDim2.new(0, 250, 0, 60)
+
+	local label = Instance.new("TextLabel", frame)
+	label.Text = name
+	label.Font = Enum.Font.GothamBold
+	label.TextColor3 = Color3.fromRGB(255, 255, 255)
+	label.TextSize = 14
+	label.Size = UDim2.new(1, 0, 0, 20)
+	label.BackgroundTransparency = 1
+
+	local slider = Instance.new("TextButton", frame)
+	slider.Position = UDim2.new(0, 0, 0, 25)
+	slider.Size = UDim2.new(1, 0, 0, 30)
+	slider.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+	slider.Text = tostring(default)
+	slider.TextColor3 = Color3.fromRGB(255, 255, 255)
+	slider.Font = Enum.Font.Gotham
+	slider.TextSize = 14
+
+	slider.MouseButton1Click:Connect(function()
+		local new = tonumber(string.match(slider.Text, "%d+")) or default
+		new = new + 10
+		if new > max then new = min end
+		slider.Text = tostring(new)
+		if callback then callback(new) end
+	end)
+
+	return frame
+end
+
+local function createColorPicker(name, default, callback)
+	local frame = Instance.new("Frame")
+	frame.Size = UDim2.new(0, 250, 0, 60)
+	frame.BackgroundTransparency = 1
+
+	local label = Instance.new("TextLabel", frame)
+	label.Text = name
+	label.Font = Enum.Font.GothamBold
+	label.TextColor3 = Color3.fromRGB(255, 255, 255)
+	label.TextSize = 14
+	label.Size = UDim2.new(1, 0, 0, 20)
+	label.BackgroundTransparency = 1
+
+	local picker = Instance.new("TextButton", frame)
+	picker.Size = UDim2.new(0, 40, 0, 30)
+	picker.Position = UDim2.new(0, 0, 0, 25)
+	picker.BackgroundColor3 = default
+	picker.Text = ""
+	picker.MouseButton1Click:Connect(function()
+		-- Just rotate RGB for now (simulate change)
+		local r, g, b = picker.BackgroundColor3.R, picker.BackgroundColor3.G, picker.BackgroundColor3.B
+		picker.BackgroundColor3 = Color3.new(g, b, r)
+		if callback then callback(picker.BackgroundColor3) end
+	end)
+
+	return frame
+end
+
+-- Feature toggles and logic
+local combatSettings = {
+	Aimbot = false,
+	SilentAim = false,
+	ShowFOV = false,
+	FOVSize = 100,
+	FOVColor = Color3.fromRGB(255, 255, 255),
+}
+
+CombatPage:AddChild(createToggle("Enable Aimbot", false, function(val) combatSettings.Aimbot = val end))
+CombatPage:AddChild(createToggle("Enable Silent Aim", false, function(val) combatSettings.SilentAim = val end))
+CombatPage:AddChild(createToggle("Show FOV Circle", false, function(val) combatSettings.ShowFOV = val end))
+CombatPage:AddChild(createSlider("FOV Size", 50, 500, 100, function(val) combatSettings.FOVSize = val end))
+CombatPage:AddChild(createColorPicker("FOV Circle Color", Color3.fromRGB(255, 255, 255), function(val) combatSettings.FOVColor = val end))
+
+-- TeamCheck is enforced passively in all logic
+local function IsEnemy(player)
+	if player == LocalPlayer then return false end
+	if player.Team == LocalPlayer.Team then return false end
+	return true
+end
+
+-- FOV Drawing + Aimbot Hook (will be used in later blocks for live target lock)
+-- Visuals Section UI and Logic (Block 3)
+
+local VisualsPage = Pages["Visuals"]
+
+local layout = Instance.new("UIListLayout", VisualsPage)
+layout.Padding = UDim.new(0, 10)
+
+local visuals = {
+	ESPEnabled = false,
+	ESPTeamCheck = false,
+	ESPColor = Color3.fromRGB(255, 255, 255),
+	RenderDistance = 2000,
+	ShowBoxes = false,
+	BoxColor = Color3.fromRGB(255, 0, 0),
+	BoxOutline = true,
+	BoxOutlineColor = Color3.fromRGB(0, 0, 0),
+	ShowNames = false,
+	NameColor = Color3.fromRGB(255, 255, 255),
+	NameOutline = true,
+	NameOutlineColor = Color3.fromRGB(0, 0, 0),
+	ShowHealth = false,
+	HealthColor = Color3.fromRGB(0, 255, 0),
+	HealthOutline = true,
+	HealthOutlineColor = Color3.fromRGB(0, 0, 0),
+}
+
+-- ESP SETTINGS
+VisualsPage:AddChild(createToggle("Enable ESP", false, function(val) visuals.ESPEnabled = val end))
+VisualsPage:AddChild(createToggle("ESP Team Check", false, function(val) visuals.ESPTeamCheck = val end))
+VisualsPage:AddChild(createColorPicker("ESP Color", visuals.ESPColor, function(c) visuals.ESPColor = c end))
+VisualsPage:AddChild(createSlider("ESP Render Distance", 500, 5000, 2000, function(val) visuals.RenderDistance = val end))
+
+-- BOXES SETTINGS
+VisualsPage:AddChild(createToggle("Boxes", false, function(val) visuals.ShowBoxes = val end))
+VisualsPage:AddChild(createColorPicker("Box Color", visuals.BoxColor, function(c) visuals.BoxColor = c end))
+VisualsPage:AddChild(createToggle("Box Outline", true, function(val) visuals.BoxOutline = val end))
+VisualsPage:AddChild(createColorPicker("Outline Color", visuals.BoxOutlineColor, function(c) visuals.BoxOutlineColor = c end))
+
+-- NAMES SETTINGS
+VisualsPage:AddChild(createToggle("Names", false, function(val) visuals.ShowNames = val end))
+VisualsPage:AddChild(createColorPicker("Name Color", visuals.NameColor, function(c) visuals.NameColor = c end))
+VisualsPage:AddChild(createToggle("Name Outline", true, function(val) visuals.NameOutline = val end))
+VisualsPage:AddChild(createColorPicker("Name Outline Color", visuals.NameOutlineColor, function(c) visuals.NameOutlineColor = c end))
+
+-- HEALTH SETTINGS
+VisualsPage:AddChild(createToggle("Health", false, function(val) visuals.ShowHealth = val end))
+VisualsPage:AddChild(createColorPicker("Health Color", visuals.HealthColor, function(c) visuals.HealthColor = c end))
+VisualsPage:AddChild(createToggle("Health Outline", true, function(val) visuals.HealthOutline = val end))
+VisualsPage:AddChild(createColorPicker("Health Outline Color", visuals.HealthOutlineColor, function(c) visuals.HealthOutlineColor = c end))
+
+-- Passive ESP Drawing (to be expanded in full logic block)
+local function DrawESPForPlayer(player)
+	if not visuals.ESPEnabled then return end
+	if visuals.ESPTeamCheck and player.Team == LocalPlayer.Team then return end
+	if (player.Character and player.Character:FindFirstChild("HumanoidRootPart")) then
+		-- Placeholder logic, expand with Drawing API or BillboardGui rendering
+	end
+end
+
+-- Player Section UI and Logic (Block 4)
+
+local PlayerPage = Pages["Player"]
+
+local layout = Instance.new("UIListLayout", PlayerPage)
+layout.Padding = UDim.new(0, 10)
+
+local playerSettings = {
+	FlyEnabled = false,
+	FlySpeed = 100,
+	WalkSpeedEnabled = false,
+	WalkSpeed = 30,
+	InfiniteJump = false,
+}
+
+-- Enable Fly
+PlayerPage:AddChild(createToggle("Enable Fly", false, function(val)
+	playerSettings.FlyEnabled = val
+end))
+
+-- Fly Speed
+PlayerPage:AddChild(createSlider("Fly Speed", 50, 300, 100, function(val)
+	playerSettings.FlySpeed = val
+end))
+
+-- Enable WalkSpeed
+PlayerPage:AddChild(createToggle("Enable WalkSpeed", false, function(val)
+	playerSettings.WalkSpeedEnabled = val
+end))
+
+-- Set WalkSpeed
+PlayerPage:AddChild(createSlider("Set WalkSpeed", 16, 100, 30, function(val)
+	playerSettings.WalkSpeed = val
+end))
+
+-- Infinite Jump
+PlayerPage:AddChild(createToggle("Infinite Jump", false, function(val)
+	playerSettings.InfiniteJump = val
+end))
+
+-- Logic for movement manipulation
+local UIS = game:GetService("UserInputService")
+local flyConn, jumpConn
+
+-- Fly logic
+task.spawn(function()
+	while true do
+		task.wait()
+		if playerSettings.FlyEnabled then
+			local char = LocalPlayer.Character
+			if char and char:FindFirstChild("HumanoidRootPart") then
+				char:FindFirstChildOfClass("Humanoid").PlatformStand = true
+				local moveDir = Vector3.zero
+				if UIS:IsKeyDown(Enum.KeyCode.W) then moveDir += Camera.CFrame.LookVector end
+				if UIS:IsKeyDown(Enum.KeyCode.S) then moveDir -= Camera.CFrame.LookVector end
+				if UIS:IsKeyDown(Enum.KeyCode.A) then moveDir -= Camera.CFrame.RightVector end
+				if UIS:IsKeyDown(Enum.KeyCode.D) then moveDir += Camera.CFrame.RightVector end
+				if UIS:IsKeyDown(Enum.KeyCode.Space) then moveDir += Camera.CFrame.UpVector end
+				if UIS:IsKeyDown(Enum.KeyCode.LeftControl) then moveDir -= Camera.CFrame.UpVector end
+				char:FindFirstChild("HumanoidRootPart").Velocity = moveDir.Unit * playerSettings.FlySpeed
+			end
+		end
+	end
+end)
+
+-- Walkspeed logic
+task.spawn(function()
+	while true do
+		task.wait(0.2)
+		local char = LocalPlayer.Character
+		if char and char:FindFirstChildOfClass("Humanoid") and playerSettings.WalkSpeedEnabled then
+			char:FindFirstChildOfClass("Humanoid").WalkSpeed = playerSettings.WalkSpeed
+		end
+	end
+end)
+
+-- Infinite Jump logic
+jumpConn = UIS.JumpRequest:Connect(function()
+	if playerSettings.InfiniteJump then
+		local char = LocalPlayer.Character
+		if char and char:FindFirstChildOfClass("Humanoid") then
+			char:FindFirstChildOfClass("Humanoid"):ChangeState(Enum.HumanoidStateType.Jumping)
+		end
+	end
+end)
+
+-- Block 5: Teleport and World Visuals Sections
+
+-- TELEPORT SECTION
+local TeleportPage = Pages["Teleport"]
+local layout = Instance.new("UIListLayout", TeleportPage)
+layout.Padding = UDim.new(0, 10)
+
+TeleportPage:AddChild(createLabel("Teleport Options"))
+
+-- Example: Teleport to Spawn
+TeleportPage:AddChild(createButton("Teleport to Spawn", function()
+	local char = LocalPlayer.Character
+	if char and char:FindFirstChild("HumanoidRootPart") then
+		char.HumanoidRootPart.CFrame = CFrame.new(Vector3.new(0, 10, 0)) -- Change this to a real spawn point if known
+	end
+end))
+
+-- WORLD VISUALS SECTION
+local WorldPage = Pages["World"]
+local layout2 = Instance.new("UIListLayout", WorldPage)
+layout2.Padding = UDim.new(0, 10)
+
+WorldPage:AddChild(createLabel("World Visuals"))
+
+-- Skybox Loader
+local skyboxIds = {
+	["Purple Nebula"] = {
+		["SkyboxBk"] = "rbxassetid://159454299",
+		["SkyboxDn"] = "rbxassetid://159454296",
+		["SkyboxFt"] = "rbxassetid://159454293",
+		["SkyboxLf"] = "rbxassetid://159454286",
+		["SkyboxRt"] = "rbxassetid://159454300",
+		["SkyboxUp"] = "rbxassetid://159454288"
+	},
+	["Sunset"] = {
+		["SkyboxBk"] = "rbxassetid://7018684000",
+		["SkyboxDn"] = "rbxassetid://7018687839",
+		["SkyboxFt"] = "rbxassetid://7018684215",
+		["SkyboxLf"] = "rbxassetid://7018683595",
+		["SkyboxRt"] = "rbxassetid://7018684981",
+		["SkyboxUp"] = "rbxassetid://7018689554"
+	}
+}
+
+for name, ids in pairs(skyboxIds) do
+	WorldPage:AddChild(createButton("Set Skybox: " .. name, function()
+		if game.Lighting:FindFirstChild("CustomSky") then
+			game.Lighting.CustomSky:Destroy()
+		end
+
+		local sky = Instance.new("Sky")
+		sky.Name = "CustomSky"
+		for prop, id in pairs(ids) do
+			sky[prop] = id
+		end
+		sky.Parent = game.Lighting
+	end))
+end
+
+-- Block 6: Final GUI Integration + Toggle
+
+-- Right Shift Toggle to show/hide GUI
+local guiVisible = true
+
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+	if not gameProcessed and input.KeyCode == Enum.KeyCode.RightShift then
+		guiVisible = not guiVisible
+		local goal = guiVisible and 1 or 0
+		local tweenInfo = TweenInfo.new(0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+		local tween = TweenService:Create(mainFrame, tweenInfo, {BackgroundTransparency = 1 - goal})
+		tween:Play()
+		mainFrame.Visible = guiVisible
+	end
+end)
+
+-- Section Button Handling
+local function switchTab(tabName)
+	for _, frame in pairs(Pages) do
+		frame.Visible = false
+	end
+	for _, btn in pairs(sectionButtons) do
+		btn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+	end
+	Pages[tabName].Visible = true
+	sectionButtons[tabName].BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+end
+
+-- Set initial tab
+switchTab("Combat")
