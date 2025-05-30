@@ -1,4 +1,4 @@
--- ZHYPERION Arsenal Styled GUI - Main Layout (Block 1)
+-- Tsun Hub V1
 
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
@@ -106,7 +106,7 @@ for i, sec in ipairs(sections) do
     end)
 end
 
--- Combat Section UI and Logic (Block 2)
+-- Combat Section UI and Logic
 
 local CombatPage = Pages["Combat"]
 
@@ -232,8 +232,8 @@ local function IsEnemy(player)
 	return true
 end
 
--- FOV Drawing + Aimbot Hook (will be used in later blocks for live target lock)
--- Visuals Section UI and Logic (Block 3)
+-- FOV Drawing + Aimbot Hook 
+-- Visuals Section UI and Logic 
 
 local VisualsPage = Pages["Visuals"]
 
@@ -378,7 +378,7 @@ jumpConn = UIS.JumpRequest:Connect(function()
 	end
 end)
 
--- Block 5: Teleport and World Visuals Sections
+-- Teleport and World Visuals Sections
 
 -- TELEPORT SECTION
 local TeleportPage = Pages["Teleport"]
@@ -437,7 +437,7 @@ for name, ids in pairs(skyboxIds) do
 	end))
 end
 
--- Block 6: Final GUI Integration + Toggle
+-- GUI Integration 
 
 -- Right Shift Toggle to show/hide GUI
 local guiVisible = true
